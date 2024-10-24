@@ -173,7 +173,7 @@
             "type": "string"
         },
         "image": {
-            "pattern": "^.+:.+$",
+            "pattern": "^.+/.+:.+$",
             "type": "string"
         },
         "license": {
