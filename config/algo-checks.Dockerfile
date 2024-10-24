@@ -1,3 +1,4 @@
+# Dockerfile
 # Provides dependencies to verify algorithm definition files 
 # and validate them against schema
 
