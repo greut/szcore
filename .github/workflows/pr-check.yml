@@ -15,6 +15,7 @@ env:
 jobs:
 
   check_yaml:
+    runs-on: ubuntu-latest
     container:
       image: ghcr.io/${{ env.IMAGE_NAME }}
       credentials:
@@ -39,6 +40,7 @@ jobs:
           rm algo.json
 
   check_image:
+    runs-on: ubuntu-latest
     steps:
 
       - name: find algorithm files
