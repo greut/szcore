@@ -1,0 +1,31 @@
+name: PR checks for algorithm submission
+
+on:
+  pull_request:
+    paths:
+      - 'algorithms/*.yaml'
+
+env:
+  IMAGE_NAME: ${{ github.repository }}-evaluator
+
+jobs:
+
+  check_yaml:
+    container:
+      image: ghcr.io/${{ env.IMAGE_NAME }}
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
+    steps:
+
+      - name: Convert yaml
+        run: yq -o json FILE.yaml > FILE.json
+
+      - name: Validate jsonschema
+        run: jsonschema-cli -i FILE.json SCHEMA.json
+
+  check_image:
+    steps:
+      - name: Pull image
+        run: docker pull $(sed 's/^image: \(.*\)$' FILE.yaml)
+
