@@ -2,6 +2,8 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+import boto3
+from tempfile import NamedTemporaryFile
 
 from epilepsy2bids.annotations import Annotations, SeizureType
 from timescoring import annotations, scoring
@@ -14,7 +16,7 @@ def toMask(annotations):
     for event in annotations.events:
         if event["eventType"].value != "bckg":
             mask[
-                round(event["onset"] * FS) : round(event["onset"] + event["duration"])
+                round(event["onset"] * FS): round(event["onset"] + event["duration"])
                 * FS
             ] = 1
     return mask
@@ -118,3 +120,68 @@ def evaluate(refFolder: str, hypFolder: str):
         + "- F1-score    : {:.2f} \n".format(f1)
         + "- FP/24h      : {:.2f} \n".format(fpRate)
     )
+
+
+def evaluate_from_s3(AWS_REGION: str, AWS_BUCKET: str, AWS_ACCESS_KEY: str, AWS_SECRET_KEY: str):
+
+    results = {
+        "dataset": [],
+        "subject": [],
+        "file": [],
+        "duration": [],
+        "tp_sample": [],
+        "fp_sample": [],
+        "refTrue_sample": [],
+        "tp_event": [],
+        "fp_event": [],
+        "refTrue_event": [],
+    }
+
+    s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY,
+                      aws_secret_access_key=AWS_SECRET_KEY, region_name=AWS_REGION)
+    # List objects in the bucket
+    response = s3.list_objects_v2(Bucket=AWS_BUCKET)
+
+    for obj in response.get('Contents', []):
+        file_path = obj['Key']
+        
+        if file_path.endswith('.tsv') and not file_path.endswith('participants.tsv') and file_path.startwith('datasets/'):
+            refTsv = file_path
+            DATASET = refTsv.split('/')[1]
+            print(DATASET)
+            
+            # Get the object from S3
+            tsv_content = s3.get_object(Bucket=AWS_BUCKET, Key=refTsv)
+
+#           Read the content of the file
+            tsv_obj = tsv_content['Body'].read().decode('utf-8')
+
+            # Write the content to a temporary file (we can remove this later once library is updated)
+            with NamedTemporaryFile(delete=False, mode='w', suffix='.tsv') as temp_file:
+                temp_file.write(tsv_obj)
+                temp_file_path = temp_file.name
+
+            ref = Annotations.loadTsv(temp_file_path)
+            ref = annotations.Annotation(toMask(ref), FS)
+            print(refTsv, "\nRef Annotation: ",ref)
+
+            # Get the corresponding hypothesis file from the algo1 folder
+            # hypTsv_base = 'submission/algo1/'
+            # hypTsv = hypTsv_base + refTsv.replace("datasets/", "", 1)
+            # print(hypTsv)
+            # hyp_tsv_content = s3.get_object(Bucket=AWS_BUCKET, Key=hypTsv)
+            # print(hypTsv, hyp_tsv_content)
+
+            hypTsv = temp_file_path
+
+            if hypTsv:
+                hyp = Annotations.loadTsv(hypTsv)
+                hyp = annotations.Annotation(toMask(hyp), FS)
+            else:
+                hyp = annotations.Annotation(np.zeros_like(ref.mask), ref.fs)
+
+            
+                break
+
+
+    # epsy2bids
