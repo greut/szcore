@@ -1,12 +1,16 @@
-name: PR checks for algorithm submission
+name: PR checks fon algorithm submission
 
 on:
   pull_request:
     paths:
       - 'algorithms/*.yaml'
+  push:
+    paths:
+      - 'algorithms/*.yaml'
 
 env:
-  IMAGE_NAME: ${{ github.repository }}-evaluator
+  IMAGE_NAME: ${{ github.repository }}-algo-checks
+  SCHEMA: "config/schema.json"
 
 jobs:
 
@@ -18,14 +22,36 @@ jobs:
         password: ${{ secrets.github_token }}
     steps:
 
-      - name: Convert yaml
-        run: yq -o json FILE.yaml > FILE.json
+      - name: find algorithm files
+        run: |
+          {
+            echo 'FILELIST<<EOF'
+            find ./algorithms -name '*.yaml' -print
+            echo EOF
+          }  >> "$GITHUB_ENV"
 
-      - name: Validate jsonschema
-        run: jsonschema-cli -i FILE.json SCHEMA.json
+      - name: Convert and validate using jsonschema
+        run: |
+          for algo in ${FILELIST}; do
+            yq -o json $algo > algo.json \
+            && jsonschema-cli -i algo.json ${{ env.SCHEMA }}
+          done
+          rm algo.json
 
   check_image:
     steps:
+
+      - name: find algorithm files
+        run: |
+          {
+            echo 'FILELIST<<EOF'
+            find ./algorithms -name '*.yaml' -print
+            echo EOF
+          }  >> "$GITHUB_ENV"
+
       - name: Pull image
-        run: docker pull $(sed 's/^image: \(.*\)$' FILE.yaml)
+        run: |
+          for algo in ${FILELIST}; do 
+            docker pull $(sed 's/^image: \+\(.*\)$/\1/' $algo)
+          done
 
