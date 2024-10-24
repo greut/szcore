@@ -9,6 +9,7 @@ on:
       - 'algorithms/*.yaml'
 
 env:
+  REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}-algo-checks
   SCHEMA: "config/schema.json"
 
@@ -17,7 +18,7 @@ jobs:
   check_yaml:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ env.IMAGE_NAME }}
+      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
