@@ -1,7 +1,7 @@
 ---
 # Description of a seizure detection algorithm
 title: My Research Software
-repository-code: "https://github.com/citation-file-format/my-research-software"
+image: "ghcr.io/username/image-name:tag"
 authors:
   - family-names: Druskat
     given-names: Stephan
@@ -9,32 +9,33 @@ authors:
   - name: "The Research Software project"
 version: 0.11.2
 date-released: "2024-10-24"
-description: This algorithm performs random detection of epileptic seizures. On each epoch of 1 second it assigns a 30% probability of being a seizure.
+abstract: This algorithm performs random detection of epileptic seizures. On each epoch of 1 second it assigns a 30% probability of being a seizure.
 license: Apache-2.0
+repository: https://github.com/
 message: If you use this software, please cite it using these metadata.
 
 # List all datasets that were used to train this algorithm
 Dataset:
     - title: Physionet CHB-MIT Scalp EEG Database
-      license: ODC-By v1.0
+      license: CC-BY-1.0
       identifiers:
         - description: Zenodo BIDS standardized version of CHB-MIT Scalp EEG database
           type: doi
           value: "10.5281/zenodo.123456"
     - title: TUH EEG Seizure Corpus
-      license: Private
+      license: https://isip.piconepress.com/projects/nedc/forms/tuh_eeg.pdf
       identifiers:
         - description: Temple University Seizure Corpus
           type: url
           value: "https://isip.piconepress.com/projects/nedc/html/tuh_eeg/#c_tusz"
     - title: Siena Scalp EEG
-      license: ODC-By v1.0
+      license: CC-BY-1.0
       identifiers:
         - description: Zenodo BIDS standardized version of Siena Scalp EEG database
           type: doi
           value: "10.5281/zenodo.10640762"
     - title: SeizeIT1
-      license: Custom KU Leuven
+      license: https://www.kuleuven.be/rdm/en/rdr/custom-kuleuven
       identifiers:
         - description: KU Lueven SeizeIT1 dataset
           type: doi
