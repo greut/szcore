@@ -4,20 +4,24 @@ on:
   pull_request:
     paths:
       - 'algorithms/*.yaml'
+      - '.github/workflows/pr-check.yml'
   push:
     paths:
       - 'algorithms/*.yaml'
+      - '.github/workflows/pr-check.yml'
 
 jobs:
 
   check_yaml:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository }}-algo-checks:latest
+      image: ghcr.io/${{ github.repository }}-algo-checks:main
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
     steps:
+
+      - uses: actions/checkout@v4
 
       - name: find algorithm files
         run: |
@@ -39,6 +43,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
+      - uses: actions/checkout@v4
+
       - name: find algorithm files
         run: |
           {
@@ -50,6 +56,10 @@ jobs:
       - name: Pull image
         run: |
           for algo in ${FILELIST}; do 
-            docker pull $(sed 's/^image: \+\(.*\)$/\1/' $algo)
+            IMAGE=$(grep '^image: ' $algo | sed 's/^image: \+//' | tr -d \'\")
+            if ! docker pull $IMAGE ; then
+              echo "Cannot pull image: $IMAGE"
+              exit 1
+            fi
           done
 
