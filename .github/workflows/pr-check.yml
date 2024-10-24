@@ -8,17 +8,12 @@ on:
     paths:
       - 'algorithms/*.yaml'
 
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}-algo-checks
-  SCHEMA: "config/schema.json"
-
 jobs:
 
   check_yaml:
     runs-on: ubuntu-latest
     container:
-      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      image: ${{ github.repository }}-algo-checks
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
@@ -36,7 +31,7 @@ jobs:
         run: |
           for algo in ${FILELIST}; do
             yq -o json $algo > algo.json \
-            && jsonschema-cli -i algo.json ${{ env.SCHEMA }}
+            && jsonschema-cli -i algo.json "config/schema.json"
           done
           rm algo.json
 
