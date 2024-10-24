@@ -11,6 +11,7 @@ version: 0.11.2
 date-released: "2024-10-24"
 abstract: This algorithm performs random detection of epileptic seizures. On each epoch of 1 second it assigns a 30% probability of being a seizure.
 license: Apache-2.0
+repository: https://github.com/
 message: If you use this software, please cite it using these metadata.
 
 # List all datasets that were used to train this algorithm
