@@ -204,9 +204,7 @@ def evaluate_s3(AWS_REGION: str, AWS_BUCKET: str, AWS_ACCESS_KEY: str, AWS_SECRE
             results["tp_event"].append(eventScore.tp)
             results["fp_event"].append(eventScore.fp)
             results["refTrue_event"].append(eventScore.refTrue)
-            count += 2
-            if count > 500:
-                break
+            count += 1
 
             print(count)
 
@@ -217,18 +215,17 @@ def evaluate_s3(AWS_REGION: str, AWS_BUCKET: str, AWS_ACCESS_KEY: str, AWS_SECRE
 
     results.to_csv("results.csv")
 
-    result_dict = {
-        "algo_id": "",
-        "datasets": []
-    }
+    result_dict = []
 
     for algo in results['algorithm'].unique():
-        result_dict["algo_id"] = algo
-        result_dict
     # Sample results
+        temp_result = {
+            "algo_id": algo,
+            "datasets": []
+        }
         for dataset in results['dataset'].unique():
             temp = {}
-            dataset_results = results[(results['dataset'] == dataset) && (results["algo_id"] == algo)]
+            dataset_results = results[(results['dataset'] == dataset) & (results["algorithm"] == algo)]
             sensitivity_sample, precision_sample, f1_sample, fpRate_sample = computeScores(
                 dataset_results["tp_sample"].sum(),
                 dataset_results["fp_sample"].sum(),
@@ -255,7 +252,9 @@ def evaluate_s3(AWS_REGION: str, AWS_BUCKET: str, AWS_ACCESS_KEY: str, AWS_SECRE
             temp["event_results"]["f1"] = f1_event
             temp["event_results"]["fpRate"] = fpRate_event
 
-            result_dict['datasets'].append(temp)
+            temp_result['datasets'].append(temp)
+        
+        result_dict.append(temp_result)
 
     # Convert result_dict to JSON
     json_object = json.dumps(result_dict)
