@@ -56,7 +56,7 @@ jobs:
           path: website/data/
 
       - name: Build website
-        run: python script.py
+        run: python /app/script.py
 
 
   deploy:
