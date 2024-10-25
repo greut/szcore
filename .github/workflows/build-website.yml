@@ -18,7 +18,7 @@ jobs:
   build:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/${{ github.repository }}-evaluator:main
+      image: ghcr.io/${{ github.repository }}-site-builder:main
       credentials:
         username: ${{ github.actor }}
         password: ${{ secrets.github_token }}
