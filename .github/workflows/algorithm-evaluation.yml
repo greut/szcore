@@ -22,6 +22,8 @@ jobs:
         with:
           files: algorithms/**.yaml
 
+      - uses: actions/checkout@v4
+
       - name: Execute algorithm container
         run: |
           # iterate over all datasets in S3
