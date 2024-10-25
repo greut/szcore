@@ -20,23 +20,38 @@ jobs:
 
       - name: Execute algorithm container
         run: |
-          for algo in ${{ steps.find-algorithm.outputs.all_changed_files }}; do
-            IMAGE=$(grep '^image: ' $algo | sed 's/^image: \+//' | tr -d \'\")
-            docker run \
-              -e AWS_REGION= ${{ secrets.AWS_REGION }} \
-              -e AWS_ACCESS_KEY= ${{ secrets.AWS_ACCESS_KEY }} \
-              -e AWS_SECRET_KEY= ${{ secrets.AWS_SECRET_KEY }} \
-              -e AWS_BUCKET= ${{ secrets.AWS_BUCKET }} \
-              -v /predictions:/output \
-              $IMAGE
-          done
+          # iterate over all datasets in S3
+          for recording in $(aws s3api list-objects --bucket ${AWS_BUCKET} --prefix datasets --output text --query 'Contents[].[Key]' | grep '.*edf'); do
 
-      - name: Save predictions
-        uses: actions/upload-artifact@v4
-        with:
-          name: predictions
-          path: /predictions
-        
+            # save each recording (dataset slice) to a temp file
+            aws s3 cp s3://${AWS_BUCKET}/${recording} /data/tmp.edf
+
+            # Run inference on recording for every updated algorithm
+            for algo in ${{ steps.find-algorithm.outputs.all_changed_files }}; do
+
+              IMAGE=$(grep '^image: ' $algo | sed 's/^image: \+//' | tr -d \'\")
+              docker run \
+                -e INPUT=tmp.edf
+                -o OUTPUT=tmp.tsv
+                -v /predictions:/output:rw \
+                -v /data:/data:ro \
+                "${IMAGE}"
+
+              # Upload predictions to S3
+              subpath=${recording#*/}
+              prediction=${subpath%_eeg.edf}_events.tsv
+              aws s3 cp \
+                /predictions/tmp.tsv \
+                "s3://${AWS_BUCKET}/submissions/${algo_name}/${prediction}"
+              rm /data/tmp.edf /predictions/tmp.tsv
+            done
+          done
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          AWS_BUCKET: ${{secrets.AWS_BUCKET }}
+
   evaluate:
     runs-on: ubuntu-latest
     container:
@@ -46,15 +61,9 @@ jobs:
         password: ${{ secrets.github_token }}
 
     steps:
-      - name: Get predictions
-        uses: actions/download-artifact@v4
-        with:
-          name: predictions
-          path: /predictions
 
       - name: Evaluate algorithm predictions
-        run: |
-          python __main__.py /predictions/*
+        run: python __main__.py
           
 
 
