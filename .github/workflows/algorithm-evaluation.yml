@@ -24,26 +24,31 @@ jobs:
           for recording in $(aws s3api list-objects --bucket ${AWS_BUCKET} --prefix datasets --output text --query 'Contents[].[Key]' | grep '.*edf'); do
 
             # save each recording (dataset slice) to a temp file
-            aws s3 cp s3://${AWS_BUCKET}/${recording} /data/tmp.edf
+            aws s3 cp s3://${AWS_BUCKET}/${recording} ./data/tmp.edf
 
             # Run inference on recording for every updated algorithm
             for algo in ${{ steps.find-algorithm.outputs.all_changed_files }}; do
 
               IMAGE=$(grep '^image: ' $algo | sed 's/^image: \+//' | tr -d \'\")
+              ALGO_NAME=$(echo "$IMAGE" | iconv -t ascii//TRANSLIT | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z
+
+              mkdir -p ./predictions
+              chmod -R 777 ./predictions/
+
               docker run \
                 -e INPUT=tmp.edf
-                -o OUTPUT=tmp.tsv
-                -v /predictions:/output:rw \
-                -v /data:/data:ro \
+                -e OUTPUT=tmp.tsv
+                -v ./predictions:/output:rw \
+                -v ./data:/data:ro \
                 "${IMAGE}"
 
               # Upload predictions to S3
               subpath=${recording#*/}
               prediction=${subpath%_eeg.edf}_events.tsv
               aws s3 cp \
-                /predictions/tmp.tsv \
-                "s3://${AWS_BUCKET}/submissions/${algo_name}/${prediction}"
-              rm /data/tmp.edf /predictions/tmp.tsv
+                ./predictions/tmp.tsv \
+                "s3://${AWS_BUCKET}/submissions/${ALGO_NAME}/${prediction}"
+              rm ./data/tmp.edf ./predictions/tmp.tsv
             done
           done
         env:
@@ -64,11 +69,3 @@ jobs:
 
       - name: Evaluate algorithm predictions
         run: python __main__.py
-          
-
-
-  upload:
-    runs-on: ubuntu-latest
-    steps:
-      - name: upload to s3
-
