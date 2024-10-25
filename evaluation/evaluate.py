@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import boto3
 from tempfile import NamedTemporaryFile
+import json
 
 from epilepsy2bids.annotations import Annotations, SeizureType
 from timescoring import annotations, scoring
@@ -122,7 +123,7 @@ def evaluate(refFolder: str, hypFolder: str):
     )
 
 
-def evaluate_from_s3(AWS_REGION: str, AWS_BUCKET: str, AWS_ACCESS_KEY: str, AWS_SECRET_KEY: str):
+def evaluate_s3(AWS_REGION: str, AWS_BUCKET: str, AWS_ACCESS_KEY: str, AWS_SECRET_KEY: str):
 
     results = {
         "dataset": [],
@@ -140,16 +141,17 @@ def evaluate_from_s3(AWS_REGION: str, AWS_BUCKET: str, AWS_ACCESS_KEY: str, AWS_
     s3 = boto3.client('s3', aws_access_key_id=AWS_ACCESS_KEY,
                       aws_secret_access_key=AWS_SECRET_KEY, region_name=AWS_REGION)
     # List objects in the bucket
+    
     response = s3.list_objects_v2(Bucket=AWS_BUCKET)
+    count = 0
 
     for obj in response.get('Contents', []):
         file_path = obj['Key']
-        
-        if file_path.endswith('.tsv') and not file_path.endswith('participants.tsv') and file_path.startwith('datasets/'):
+
+        if file_path.endswith('.tsv') and not file_path.endswith('participants.tsv') and file_path.startswith('datasets/'):
             refTsv = file_path
             DATASET = refTsv.split('/')[1]
-            print(DATASET)
-            
+
             # Get the object from S3
             tsv_content = s3.get_object(Bucket=AWS_BUCKET, Key=refTsv)
 
@@ -163,7 +165,7 @@ def evaluate_from_s3(AWS_REGION: str, AWS_BUCKET: str, AWS_ACCESS_KEY: str, AWS_
 
             ref = Annotations.loadTsv(temp_file_path)
             ref = annotations.Annotation(toMask(ref), FS)
-            print(refTsv, "\nRef Annotation: ",ref)
+            print(refTsv, "\nRef Annotation: ", ref)
 
             # Get the corresponding hypothesis file from the algo1 folder
             # hypTsv_base = 'submission/algo1/'
@@ -180,8 +182,85 @@ def evaluate_from_s3(AWS_REGION: str, AWS_BUCKET: str, AWS_ACCESS_KEY: str, AWS_
             else:
                 hyp = annotations.Annotation(np.zeros_like(ref.mask), ref.fs)
 
-            
+            sampleScore = scoring.SampleScoring(ref, hyp)
+            eventScore = scoring.EventScoring(ref, hyp)
+
+            # results["dataset"].append(DATASET)
+
+            # dataset logic for testing
+            if count > 250:
+                DATASET = 'group2'
+            results["dataset"].append(DATASET)
+
+            results["subject"].append(refTsv.split("/")[2])
+            results["file"].append(refTsv.split("/")[-1])
+
+            results["duration"].append(len(ref.mask) / ref.fs)
+            results["tp_sample"].append(sampleScore.tp)
+            results["fp_sample"].append(sampleScore.fp)
+            results["refTrue_sample"].append(sampleScore.refTrue)
+            results["tp_event"].append(eventScore.tp)
+            results["fp_event"].append(eventScore.fp)
+            results["refTrue_event"].append(eventScore.refTrue)
+            count += 2
+            if count > 500:
                 break
 
+            print(count)
 
-    # epsy2bids
+    results = pd.DataFrame(results)
+    grouped_results = results.groupby('dataset')[
+        ['tp_sample', 'fp_sample', 'refTrue_sample', 'duration']].sum().reset_index()
+    print(grouped_results.head())
+
+    results.to_csv("results.csv")
+
+    result_dict = {
+        "algo_id": "ANN",
+        "datasets": []
+    }
+    # Sample results
+    for dataset in results['dataset'].unique():
+        temp = {}
+        dataset_results = results[results['dataset'] == dataset]
+        sensitivity_sample, precision_sample, f1_sample, fpRate_sample = computeScores(
+            dataset_results["tp_sample"].sum(),
+            dataset_results["fp_sample"].sum(),
+            dataset_results["refTrue_sample"].sum(),
+            dataset_results["duration"].sum(),)
+
+        sensitivity_event, precision_event, f1_event, fpRate_event = computeScores(
+            dataset_results["tp_event"].sum(),
+            dataset_results["fp_event"].sum(),
+            dataset_results["refTrue_event"].sum(),
+            dataset_results["duration"].sum())
+
+        temp["dataset"] = dataset
+
+        temp["sample_results"] = {}
+        temp["sample_results"]["sensitivity"] = sensitivity_sample
+        temp["sample_results"]["precision"] = precision_sample
+        temp["sample_results"]["f1"] = f1_sample
+        temp["sample_results"]["fpRate"] = fpRate_sample
+
+        temp["event_results"] = {}
+        temp["event_results"]["sensitivity"] = sensitivity_event
+        temp["event_results"]["precision"] = precision_event
+        temp["event_results"]["f1"] = f1_event
+        temp["event_results"]["fpRate"] = fpRate_event
+
+        result_dict['datasets'].append(temp)
+
+    # Convert result_dict to JSON
+    json_object = json.dumps(result_dict)
+    
+    # Print JSON object
+    print(json_object)
+    
+    # Write JSON object to S3
+    s3.put_object(Bucket=AWS_BUCKET, Key='results/results.json', Body=json_object)
+    
+    # Write results.csv to S3
+    with open("results.csv", "rb") as csv_file:
+        s3.put_object(Bucket=AWS_BUCKET, Key='results/results.csv', Body=csv_file)
+
