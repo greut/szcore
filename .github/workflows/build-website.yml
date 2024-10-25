@@ -56,7 +56,7 @@ jobs:
           path: website/data/
 
       - name: Build website
-        run: python /app/script.py
+        run: python /app/script.py website/data/sampleEval.json
 
 
   deploy:

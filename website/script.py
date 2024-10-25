@@ -1,12 +1,12 @@
 import plotly.graph_objects as go
 import pandas as pd
 from layout import layout_with_figures
-import json, re
+import json, re, sys
 from algo_details_script import create_algo_page
 
 github_pages_root_url = "https://esl-epfl.github.io/szcore/"
 
-path_to_eval = './data/sampleEval.json'
+path_to_eval = sys.argv[1]
 path_to_algo_yaml = "../algorithms/"
 file = open(path_to_eval)
 
