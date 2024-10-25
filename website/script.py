@@ -1,7 +1,7 @@
 import plotly.graph_objects as go
 import pandas as pd
 from layout import layout_with_figures
-import json
+import json, re
 
 path_to_eval = './data/sampleEval.json'
 file = open(path_to_eval)
@@ -17,7 +17,8 @@ for entry in eval:
         dataset_name = dataset["dataset"]
         datasets.add(dataset_name)
         sample_results = dataset["sample_results"]
-        row = {"algo_id": algo_id, "dataset": dataset_name, **sample_results}
+        algo_html = "<a href='https://example.com'>"  + re.sub(r'[^a-zA-Z0-9]', '', algo_id) + "</a>"
+        row = {"algo_id": algo_html, "dataset": dataset_name, **sample_results}
         data_for_df.append(row)
 
 df = pd.DataFrame(data_for_df)
@@ -40,3 +41,5 @@ complete_html = layout_with_figures(plotly_html, datasets)
 # Save everything into a single HTML file
 with open("index.html", "w") as file:
     file.write(complete_html)
+
+# Create second HTML file for algo details (from yaml)

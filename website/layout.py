@@ -16,23 +16,24 @@ def layout_with_figures(graph, datasets):
             <p>Standardising benchmarking procedures across epilepsy models. Datasets, performance scores</p>
             <div>
                 <div style="width: 15%; float: left; background: aliceblue;">
-                    <label for="datasets">Choose a dataset:</label>
-                    <select name="datasets" id="datasets">
+                    <label for="datasets">Validation dataset:</label>
+                    <div name="datasets" id="datasets">
                         """
     for d in datasets:
         val = d.lower()
         title = d.title()
         temp = f"""
-                    <option value="{val}">{title}</option>
+                    <input type="checkbox" id="{val}" name="{val}" checked/>
+                    <label for="{val}">{title}</label>
                 """
         dropdown += temp
     dropdown += """
-                    </select>
+                    </div>
 
                     <fieldset>
                         <legend>Performance Metrics</legend>
                         <div>
-                            <input type="checkbox" id="sensitivity" name="sensitvity" onclick=hideShowColumns() checked />
+                            <input type="checkbox" id="sensitivity" name="sensitvity" checked />
                             <label for="sensitivity">Sensitvity</label>
                         </div>
                         <div>
@@ -53,12 +54,12 @@ def layout_with_figures(graph, datasets):
                         <legend>Scoring Type</legend>
                         
                         <div>
-                            <input type="radio" id="scoringSampleBased" name="scoringType" value="scoringSampleBased" checked />
+                            <input type="checkbox" id="scoringSampleBased" name="scoringSampleBased" value="scoringSampleBased" checked />
                             <label for="scoringSampleBased">Sample-based</label>
                         </div>
                         
                         <div>
-                            <input type="radio" id="scoringEventBased" name="scoringType" value="scoringEventBased" />
+                            <input type="checkbox" id="scoringEventBased" name="scoringEventBased" value="scoringEventBased" checked />
                             <label for="scoringEventBased">Event-based</label>
                         </div>
                     </fieldset>
