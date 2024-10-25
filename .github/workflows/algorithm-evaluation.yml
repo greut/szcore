@@ -39,9 +39,10 @@ jobs:
               mkdir -p ./predictions
               chmod -R 777 ./predictions/
 
+              echo "Running inference for $ALGO_NAME"
               docker run \
-                -e INPUT=tmp.edf
-                -e OUTPUT=tmp.tsv
+                -e INPUT=tmp.edf \
+                -e OUTPUT=tmp.tsv \
                 -v ./predictions:/output:rw \
                 -v ./data:/data:ro \
                 "${IMAGE}"
