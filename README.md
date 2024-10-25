@@ -19,7 +19,7 @@ flowchart LR
     subgraph S3
     EDF[edf]
     TSVr[TSV ref]
-    TSVh[TSV s3hyp]
+    TSVh[TSV hyp]
     end
 
     subgraph Github Actions CI

@@ -1,0 +1,83 @@
+name: Execute algorithm and evaluate metrics
+
+on:
+  push:
+    branches: [ "main" ]
+    paths:
+      - 'algorithms/*.yaml'
+      - '.github/workflows/algorithm-evaluation.yml'
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - 'algorithms/*.yaml'
+      - '.github/workflows/algorithm-evaluation.yml'
+
+jobs:
+  execute:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Find updated algorithm
+        id: find-algorithm
+        uses: tj-actions/changed-files@v44
+        with:
+          files: algorithms/**.yaml
+
+      - uses: actions/checkout@v4
+
+      - name: Execute algorithm container
+        run: |
+          # iterate over all datasets in S3
+          for recording in $(aws s3api list-objects --bucket ${AWS_BUCKET} --prefix datasets --output text --query 'Contents[].[Key]' | grep '.*edf'); do
+
+            if [ ${{ steps.find-algorithm.outputs.any_changed }} == "false" ]; then
+              break
+            fi
+
+            # save each recording (dataset slice) to a temp file
+            aws s3 cp s3://${AWS_BUCKET}/${recording} ./data/tmp.edf
+
+            # Run inference on recording for every updated algorithm
+            for algo in ${{ steps.find-algorithm.outputs.all_changed_files }}; do
+
+              IMAGE=$(grep '^image: ' $algo | sed 's/^image: \+//' | tr -d \'\")
+              ALGO_NAME=$(echo "$IMAGE" | iconv -t ascii//TRANSLIT | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z)
+
+              mkdir -p ./predictions
+              chmod -R 777 ./predictions/
+
+              echo "Running inference for $ALGO_NAME"
+              docker run \
+                -e INPUT=tmp.edf \
+                -e OUTPUT=tmp.tsv \
+                -v ./predictions:/output:rw \
+                -v ./data:/data:ro \
+                "${IMAGE}"
+
+              # Upload predictions to S3
+              subpath=${recording#*/}
+              prediction=${subpath%_eeg.edf}_events.tsv
+              aws s3 cp \
+                ./predictions/tmp.tsv \
+                "s3://${AWS_BUCKET}/submissions/${ALGO_NAME}/${prediction}"
+              rm ./data/tmp.edf ./predictions/tmp.tsv
+            done
+          done
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          AWS_BUCKET: ${{secrets.AWS_BUCKET }}
+
+  evaluate:
+    runs-on: ubuntu-latest
+    needs: [execute]
+    container:
+      image: ghcr.io/${{ github.repository }}-evaluator:main
+      credentials:
+        username: ${{ github.actor }}
+        password: ${{ secrets.github_token }}
+
+    steps:
+
+      - name: Evaluate algorithm predictions
+        run: python __main__.py

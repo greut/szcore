@@ -2,8 +2,12 @@ import plotly.graph_objects as go
 import pandas as pd
 from layout import layout_with_figures
 import json, re
+from algo_details_script import create_algo_page
+
+github_pages_root_url = "https://esl-epfl.github.io/szcore/"
 
 path_to_eval = './data/sampleEval.json'
+path_to_algo_yaml = "../algorithms/"
 file = open(path_to_eval)
 
 metrics = ["Sensitivity", "Precision", "F1 Score", "fpRate"] # hardcoded
@@ -17,7 +21,7 @@ for entry in eval:
         dataset_name = dataset["dataset"]
         datasets.add(dataset_name)
         sample_results = dataset["sample_results"]
-        algo_html = "<a href='https://example.com'>"  + re.sub(r'[^a-zA-Z0-9]', '', algo_id) + "</a>"
+        algo_html = "<a href='" + github_pages_root_url + (re.sub(r'[^a-zA-Z0-9]', '', algo_id)).lower() + ".html'>" + algo_id + "</a>"
         row = {"algo_id": algo_html, "dataset": dataset_name, **sample_results}
         data_for_df.append(row)
 
@@ -39,7 +43,8 @@ plotly_html = fig.to_html(full_html=False, include_plotlyjs='cdn')
 complete_html = layout_with_figures(plotly_html, datasets)
 
 # Save everything into a single HTML file
-with open("index.html", "w") as file:
+with open("./public/index.html", "w") as file:
     file.write(complete_html)
 
 # Create second HTML file for algo details (from yaml)
+create_algo_page(path_to_algo_yaml)

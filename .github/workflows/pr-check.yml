@@ -1,4 +1,4 @@
-name: PR checks fon algorithm submission
+name: PR checks on algorithm submission
 
 on:
   pull_request:
