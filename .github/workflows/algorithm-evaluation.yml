@@ -34,7 +34,7 @@ jobs:
             for algo in ${{ steps.find-algorithm.outputs.all_changed_files }}; do
 
               IMAGE=$(grep '^image: ' $algo | sed 's/^image: \+//' | tr -d \'\")
-              ALGO_NAME=$(echo "$IMAGE" | iconv -t ascii//TRANSLIT | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z
+              ALGO_NAME=$(echo "$IMAGE" | iconv -t ascii//TRANSLIT | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z)
 
               mkdir -p ./predictions
               chmod -R 777 ./predictions/
@@ -63,6 +63,7 @@ jobs:
 
   evaluate:
     runs-on: ubuntu-latest
+    needs: [execute]
     container:
       image: ghcr.io/${{ github.repository }}-evaluator:main
       credentials:
