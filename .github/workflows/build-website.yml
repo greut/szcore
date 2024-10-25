@@ -21,7 +21,7 @@ jobs:
       - name: Download results
         run: |
           aws s3 cp \
-            s3://${AWS_BUCKET}/results.results.json \
+            s3://${AWS_BUCKET}/results/results.json \
             website/data/sampleEval.json
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
