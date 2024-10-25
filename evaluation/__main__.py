@@ -1,12 +1,14 @@
 if __name__ == "__main__":
-    import argparse
-    from evaluate.evaluate import evaluate
+    from evaluate import evaluate_s3, evaluate
+    import os
+    from dotenv import load_dotenv
+    load_dotenv('evaluation/.env')
 
-    parser = argparse.ArgumentParser(
-        description="Evaluation code to compare annotations from a seizure detection algorithm to ground truth annotations."
-    )
-    parser.add_argument("ref", help="Path to the root folder containing the reference annotations.")
-    parser.add_argument("hyp", help="Path to the root folder containing the hypothesis annotations.")
 
-    args = parser.parse_args()
-    evaluate(args.ref, args.hyp)
+    AWS_REGION = os.getenv('AWS_REGION')
+    AWS_BUCKET = os.getenv('AWS_BUCKET')
+    AWS_ACCESS_KEY = os.getenv('AWS_ACCESS_KEY')
+    AWS_SECRET_KEY = os.getenv('AWS_SECRET_KEY')
+
+
+    evaluate_s3(AWS_REGION, AWS_BUCKET, AWS_ACCESS_KEY, AWS_SECRET_KEY)
