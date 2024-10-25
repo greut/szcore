@@ -122,13 +122,13 @@ def evaluate(refFolder: str, hypFolder: str):
         + "- FP/24h      : {:.2f} \n".format(fpRate)
     )
 
-
 def evaluate_s3(AWS_REGION: str, AWS_BUCKET: str, AWS_ACCESS_KEY: str, AWS_SECRET_KEY: str):
 
     results = {
         "dataset": [],
         "subject": [],
         "file": [],
+        "algorithm": [],
         "duration": [],
         "tp_sample": [],
         "fp_sample": [],
@@ -167,19 +167,23 @@ def evaluate_s3(AWS_REGION: str, AWS_BUCKET: str, AWS_ACCESS_KEY: str, AWS_SECRE
             ref = annotations.Annotation(toMask(ref), FS)
             print(refTsv, "\nRef Annotation: ", ref)
 
-            # Get the corresponding hypothesis file from the algo1 folder
-            # hypTsv_base = 'submission/algo1/'
-            # hypTsv = hypTsv_base + refTsv.replace("datasets/", "", 1)
-            # print(hypTsv)
-            # hyp_tsv_content = s3.get_object(Bucket=AWS_BUCKET, Key=hypTsv)
-            # print(hypTsv, hyp_tsv_content)
+            # Get the corresponding hypothesis file from the algo1 folder (we can change this to alregular expression based logic later)
+            hypTsv_base = "submissions/ghcr-io-esl-epfl-gotman-1982-latest/"
 
-            hypTsv = temp_file_path
+            hypTsv = hypTsv_base + refTsv.replace("datasets/", "", 1)
+            
 
-            if hypTsv:
-                hyp = Annotations.loadTsv(hypTsv)
+            try:
+                hyp_tsv_content = s3.get_object(Bucket=AWS_BUCKET, Key=hypTsv)
+                print("\n ref_tsv_path:", refTsv, "\n hyp_tsv_path:", hypTsv, "\n hyp_tsv_content:", hyp_tsv_content, "datasetname: ", DATASET)
+
+                with NamedTemporaryFile(delete=False, mode='w', suffix='.tsv') as temp_file2:
+                    temp_file2.write(tsv_obj)
+                    temp_file2_path = temp_file2.name
+                hyp = Annotations.loadTsv(temp_file2_path)
                 hyp = annotations.Annotation(toMask(hyp), FS)
-            else:
+            except Exception as e:
+                print(f"Error loading hypothesis file: {e}")
                 hyp = annotations.Annotation(np.zeros_like(ref.mask), ref.fs)
 
             sampleScore = scoring.SampleScoring(ref, hyp)
@@ -188,13 +192,11 @@ def evaluate_s3(AWS_REGION: str, AWS_BUCKET: str, AWS_ACCESS_KEY: str, AWS_SECRE
             # results["dataset"].append(DATASET)
 
             # dataset logic for testing
-            if count > 250:
-                DATASET = 'group2'
             results["dataset"].append(DATASET)
 
             results["subject"].append(refTsv.split("/")[2])
             results["file"].append(refTsv.split("/")[-1])
-
+            results["algorithm"].append(hypTsv.split("/")[1])
             results["duration"].append(len(ref.mask) / ref.fs)
             results["tp_sample"].append(sampleScore.tp)
             results["fp_sample"].append(sampleScore.fp)
@@ -216,40 +218,44 @@ def evaluate_s3(AWS_REGION: str, AWS_BUCKET: str, AWS_ACCESS_KEY: str, AWS_SECRE
     results.to_csv("results.csv")
 
     result_dict = {
-        "algo_id": "ANN",
+        "algo_id": "",
         "datasets": []
     }
+
+    for algo in results['algorithm'].unique():
+        result_dict["algo_id"] = algo
+        result_dict
     # Sample results
-    for dataset in results['dataset'].unique():
-        temp = {}
-        dataset_results = results[results['dataset'] == dataset]
-        sensitivity_sample, precision_sample, f1_sample, fpRate_sample = computeScores(
-            dataset_results["tp_sample"].sum(),
-            dataset_results["fp_sample"].sum(),
-            dataset_results["refTrue_sample"].sum(),
-            dataset_results["duration"].sum(),)
+        for dataset in results['dataset'].unique():
+            temp = {}
+            dataset_results = results[(results['dataset'] == dataset) && (results["algo_id"] == algo)]
+            sensitivity_sample, precision_sample, f1_sample, fpRate_sample = computeScores(
+                dataset_results["tp_sample"].sum(),
+                dataset_results["fp_sample"].sum(),
+                dataset_results["refTrue_sample"].sum(),
+                dataset_results["duration"].sum(),)
 
-        sensitivity_event, precision_event, f1_event, fpRate_event = computeScores(
-            dataset_results["tp_event"].sum(),
-            dataset_results["fp_event"].sum(),
-            dataset_results["refTrue_event"].sum(),
-            dataset_results["duration"].sum())
+            sensitivity_event, precision_event, f1_event, fpRate_event = computeScores(
+                dataset_results["tp_event"].sum(),
+                dataset_results["fp_event"].sum(),
+                dataset_results["refTrue_event"].sum(),
+                dataset_results["duration"].sum())
 
-        temp["dataset"] = dataset
+            temp["dataset"] = dataset
 
-        temp["sample_results"] = {}
-        temp["sample_results"]["sensitivity"] = sensitivity_sample
-        temp["sample_results"]["precision"] = precision_sample
-        temp["sample_results"]["f1"] = f1_sample
-        temp["sample_results"]["fpRate"] = fpRate_sample
+            temp["sample_results"] = {}
+            temp["sample_results"]["sensitivity"] = sensitivity_sample
+            temp["sample_results"]["precision"] = precision_sample
+            temp["sample_results"]["f1"] = f1_sample
+            temp["sample_results"]["fpRate"] = fpRate_sample
 
-        temp["event_results"] = {}
-        temp["event_results"]["sensitivity"] = sensitivity_event
-        temp["event_results"]["precision"] = precision_event
-        temp["event_results"]["f1"] = f1_event
-        temp["event_results"]["fpRate"] = fpRate_event
+            temp["event_results"] = {}
+            temp["event_results"]["sensitivity"] = sensitivity_event
+            temp["event_results"]["precision"] = precision_event
+            temp["event_results"]["f1"] = f1_event
+            temp["event_results"]["fpRate"] = fpRate_event
 
-        result_dict['datasets'].append(temp)
+            result_dict['datasets'].append(temp)
 
     # Convert result_dict to JSON
     json_object = json.dumps(result_dict)
