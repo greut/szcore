@@ -4,7 +4,7 @@ def layout_with_figures(graph, datasets):
         <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Epilepsy Benchmarks</title>
+            <title>Standardised Algorithm Evaluation</title>
             <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
                 <style>
                     body {{font-family: Roboto, sans-serif;}}
@@ -12,8 +12,8 @@ def layout_with_figures(graph, datasets):
         </head>
         <body>
 
-            <h1>Epilepsy Benchmarks</h1>
-            <p>Standardising benchmarking procedures across epilepsy models. Datasets, performance scores</p>
+            <h1>Validation of Epileptic Seizure Detection Algorithms</h1>
+            <p><strong>Standardising benchmarking procedures across epilepsy models</strong></p>
             <div>
                 <div style="width: 15%; float: left; background: aliceblue;">
                     <label for="datasets">Validation dataset:</label>
@@ -27,7 +27,7 @@ def layout_with_figures(graph, datasets):
                     <label for="{val}">{title}</label>
                 """
         dropdown += temp
-    dropdown += """
+    dropdown += """<br></br>
                     </div>
 
                     <fieldset>
@@ -49,7 +49,7 @@ def layout_with_figures(graph, datasets):
                             <label for="fpRate">fpRate</label>
                         </div>
                     </fieldset>
-
+                    <br></br>
                     <fieldset>
                         <legend>Scoring Type</legend>
                         
@@ -63,6 +63,7 @@ def layout_with_figures(graph, datasets):
                             <label for="scoringEventBased">Event-based</label>
                         </div>
                     </fieldset>
+                    <br></br>
 
                 </div>
                 <div style="margin-left: 15%;">

@@ -28,7 +28,7 @@ def create_algo_page(path):
 
                     <p>Date released: {data["date-released"]}</p>
 
-                    <p>License: {data["license"]}</p>
+                    <p><strong>License:</strong> {data["license"]}</p>
 
                     <a href="{data["repository"]}">Repository: {data["repository"]}</a>
                     
