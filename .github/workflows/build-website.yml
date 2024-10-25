@@ -27,6 +27,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Download results
+        run: |
+          aws s3 cp \
+            s3://${AWS_BUCKET}/results.results.json \
+            website/data/sampleEval.json
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_KEY }}
+          AWS_DEFAULT_REGION: ${{ secrets.AWS_REGION }}
+          AWS_BUCKET: ${{secrets.AWS_BUCKET }}
+
       - name: Build website
         run: python script.py
 
