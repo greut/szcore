@@ -14,4 +14,4 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY . .
 
 # Command to run the evaluator.py script
-CMD ["python", "__main__.py"]
+CMD ["python", "script.py"]

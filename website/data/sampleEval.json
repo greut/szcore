@@ -1,0 +1,70 @@
+[{
+  "algo_id": "ANN",
+  "datasets": [
+    {
+      "dataset": "chbmit",
+      "sample_results": {
+        "sensitivity": 1,
+        "precision": 1,
+        "f1": 1,
+        "fpRate": 0
+      },
+      "event_results": {
+        "sensitivity": 1,
+        "precision": 1,
+        "f1": 1,
+        "fpRate": 0
+      }
+    },
+    {
+      "dataset": "group2",
+      "sample_results": {
+        "sensitivity": 1,
+        "precision": 1,
+        "f1": 1,
+        "fpRate": 0
+      },
+      "event_results": {
+        "sensitivity": 1,
+        "precision": 1,
+        "f1": 1,
+        "fpRate": 0
+      }
+    }
+  ]
+},
+{
+  "algo_id": "ANN",
+  "datasets": [
+    {
+      "dataset": "chbmit",
+      "sample_results": {
+        "sensitivity": 1,
+        "precision": 1,
+        "f1": 1,
+        "fpRate": 0
+      },
+      "event_results": {
+        "sensitivity": 1,
+        "precision": 1,
+        "f1": 1,
+        "fpRate": 0
+      }
+    },
+    {
+      "dataset": "group2",
+      "sample_results": {
+        "sensitivity": 1,
+        "precision": 1,
+        "f1": 1,
+        "fpRate": 0
+      },
+      "event_results": {
+        "sensitivity": 1,
+        "precision": 1,
+        "f1": 1,
+        "fpRate": 0
+      }
+    }
+  ]
+}]
