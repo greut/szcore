@@ -1,49 +1,41 @@
 import plotly.graph_objects as go
 import pandas as pd
+from layout import layout_with_figures
+import json
 
-# Create heatmap data
-data = pd.DataFrame({
-    'x': ['A', 'B', 'C'],
-    'y': ['W', 'X', 'Y'],
-    'z': [1, 3, 2]
-})
+path_to_eval = './data/sampleEval.json'
+file = open(path_to_eval)
 
-fig = go.Figure(data=go.Heatmap(
-    z=data['z'],
-    x=data['x'],
-    y=data['y'],
-    colorscale='Viridis'
-))
+metrics = ["Sensitivity", "Precision", "F1 Score", "fpRate"] # hardcoded
+
+eval = json.load(file)
+data_for_df = []
+datasets = set()
+for entry in eval:
+    algo_id = entry["algo_id"]
+    for dataset in entry["datasets"]:
+        dataset_name = dataset["dataset"]
+        datasets.add(dataset_name)
+        sample_results = dataset["sample_results"]
+        row = {"algo_id": algo_id, "dataset": dataset_name, **sample_results}
+        data_for_df.append(row)
+
+df = pd.DataFrame(data_for_df)
+headers = ["Algorithm", "Dataset"] + list(df.columns[2:])
+table_data = [df[col].tolist() for col in df.columns]
+# algorithms = [item["algo_id"] for item in eval]
+
+# Table plot
+fig = go.Figure(data=[go.Table(header=dict(values=headers),
+    cells=dict(values=table_data))])
 
 
 # Generate the Plotly figure HTML as a string
 plotly_html = fig.to_html(full_html=False, include_plotlyjs='cdn')
 
-# Create your custom body section (you can expand this)
-custom_html = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Epilepsy Benchmarks</title>
-</head>
-<body>
-
-    <h1>Epilepsy Benchmarks</h1>
-    <p>Standardising benchmarking procedures across epilepsy models. Datasets, performance scores</p>
-    
-    <!-- Your plotly heatmap will be inserted here -->
-    {plotly_figure}
-
-    <p>Click to sort</p>
-
-</body>
-</html>
-"""
 
 # Combine the custom HTML and the Plotly figure
-complete_html = custom_html.format(plotly_figure=plotly_html)
+complete_html = layout_with_figures(plotly_html, datasets)
 
 # Save everything into a single HTML file
 with open("index.html", "w") as file:
