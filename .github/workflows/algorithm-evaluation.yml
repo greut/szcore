@@ -3,10 +3,14 @@ name: Execute algorithm and evaluate metrics
 on:
   push:
     branches: [ "main" ]
-    paths: 'algorithms/*.yaml'
+    paths:
+      - 'algorithms/*.yaml'
+      - '.github/workflows/algorithm-evaluation.yml'
   pull_request:
     branches: [ "main" ]
-    paths: 'algorithms/*.yaml'
+    paths:
+      - 'algorithms/*.yaml'
+      - '.github/workflows/algorithm-evaluation.yml'
 
 jobs:
   execute:
