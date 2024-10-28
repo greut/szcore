@@ -1,3 +1,4 @@
+import os
 import plotly.graph_objects as go
 import pandas as pd
 from layout import layout_with_figures
@@ -43,6 +44,7 @@ plotly_html = fig.to_html(full_html=False, include_plotlyjs='cdn')
 complete_html = layout_with_figures(plotly_html, datasets)
 
 # Save everything into a single HTML file
+os.makedirs("./public", exist_ok=True)
 with open("./public/index.html", "w") as file:
     file.write(complete_html)
 
