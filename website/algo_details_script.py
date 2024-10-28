@@ -47,7 +47,7 @@ def create_algo_page(path):
                 </body>
                 """
 
-            with open(f"./public/{algo_id}.html", "w", encoding="UTF-8") as file:
+            with open(f".website/public/{algo_id}.html", "w", encoding="UTF-8") as file:
                 file.write(algo_html)
     return algo_html
 
