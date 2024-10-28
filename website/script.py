@@ -45,7 +45,7 @@ complete_html = layout_with_figures(plotly_html, datasets)
 
 # Save everything into a single HTML file
 # os.makedirs("./public", exist_ok=True)
-with open(".website/public/index.html", "w") as file:
+with open("./website/public/index.html", "w") as file:
     file.write(complete_html)
 
 # Create second HTML file for algo details (from yaml)
