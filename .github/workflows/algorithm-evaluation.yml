@@ -42,8 +42,13 @@ jobs:
               IMAGE=$(grep '^image: ' $algo | sed 's/^image: \+//' | tr -d \'\")
               ALGO_NAME=$(echo "$IMAGE" | iconv -t ascii//TRANSLIT | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z)
 
+              # Create prediction directory and set permissions for the output file.
               mkdir -p ./predictions
-              chmod -R 777 ./predictions/
+              touch ./predictions/tmp.tsv
+              chmod 776 ./predictions/tmp.tsv
+
+              # Create restricted network for docker image execution
+              docker network create --driver bridge isolated_network
 
               echo "Running inference for $ALGO_NAME"
               docker run \
@@ -51,6 +56,8 @@ jobs:
                 -e OUTPUT=tmp.tsv \
                 -v ./predictions:/output:rw \
                 -v ./data:/data:ro \
+                --network isolated_network \
+                --name "${ALGO_NAME}" \
                 "${IMAGE}"
 
               # Upload predictions to S3
@@ -59,8 +66,14 @@ jobs:
               aws s3 cp \
                 ./predictions/tmp.tsv \
                 "s3://${AWS_BUCKET}/submissions/${ALGO_NAME}/${prediction}"
-              rm ./data/tmp.edf ./predictions/tmp.tsv
+
+              # Cleanup
+              rm ./predictions/tmp.tsv
+              docker rm "${ALGO_NAME}"
+              docker network rm isolated_network
             done
+            # Cleanup
+            rm ./data/tmp.edf
           done
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
