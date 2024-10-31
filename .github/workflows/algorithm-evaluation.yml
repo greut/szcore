@@ -68,9 +68,12 @@ jobs:
                 "s3://${AWS_BUCKET}/submissions/${ALGO_NAME}/${prediction}"
 
               # Cleanup
-              rm ./data/tmp.edf ./predictions/tmp.tsv
-              docker rm "${ALGO_NAME}" docker network rm isolated_network
+              rm ./predictions/tmp.tsv
+              docker rm "${ALGO_NAME}"
+              docker network rm isolated_network
             done
+            # Cleanup
+            rm ./data/tmp.edf
           done
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY }}
