@@ -42,8 +42,10 @@ jobs:
               IMAGE=$(grep '^image: ' $algo | sed 's/^image: \+//' | tr -d \'\")
               ALGO_NAME=$(echo "$IMAGE" | iconv -t ascii//TRANSLIT | sed -r s/[^a-zA-Z0-9]+/-/g | sed -r s/^-+\|-+$//g | tr A-Z a-z)
 
+              # Create prediction directory and set permissions for the output file.
               mkdir -p ./predictions
-              chmod -R 777 ./predictions/
+              touch ./predictions/tmp.tsv
+              chmod 776 ./predictions/tmp.tsv
 
               echo "Running inference for $ALGO_NAME"
               docker run \
