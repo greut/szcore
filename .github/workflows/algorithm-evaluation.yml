@@ -47,12 +47,17 @@ jobs:
               touch ./predictions/tmp.tsv
               chmod 776 ./predictions/tmp.tsv
 
+              # Create restricted network for docker image execution
+              docker network create --driver bridge isolated_network
+
               echo "Running inference for $ALGO_NAME"
               docker run \
                 -e INPUT=tmp.edf \
                 -e OUTPUT=tmp.tsv \
                 -v ./predictions:/output:rw \
                 -v ./data:/data:ro \
+                --network isolated_network \
+                --name "${ALGO_NAME}" \
                 "${IMAGE}"
 
               # Upload predictions to S3
@@ -61,7 +66,10 @@ jobs:
               aws s3 cp \
                 ./predictions/tmp.tsv \
                 "s3://${AWS_BUCKET}/submissions/${ALGO_NAME}/${prediction}"
+
+              # Cleanup
               rm ./data/tmp.edf ./predictions/tmp.tsv
+              docker rm "${ALGO_NAME}" docker network rm isolated_network
             done
           done
         env:
