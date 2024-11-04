@@ -13,30 +13,7 @@ Once the PR is merged, this image is used to execute the algorithm on github act
 
 ## Data flow
 
-```mermaid
-flowchart LR
-
-    subgraph S3
-    EDF[edf]
-    TSVr[TSV ref]
-    TSVh[TSV hyp]
-    end
-
-    subgraph Github Actions CI
-        EDF --> ALG{algo}
-        C[yaml] --> ALG
-        ALG --> TSVg[TSV gha]
-        TSVg --> CIu{CI upload}
-        TSVh --> F{eval}
-        F --> G[json]
-        G --> H{site builder}
-        CIu --> TSVh
-        TSVr --> F
-    end
-    subgraph Github pages
-        H --> I[html]
-    end
-```
+![overview](./doc/overview.svg)
 
 ## Acknowledgement
 
